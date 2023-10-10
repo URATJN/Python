@@ -83,6 +83,7 @@ def updateFileName():
     folderpath = values["-FOLDER-"]
     filename = values["-FILE LIST-"][0]
     filepath = '"' + folderpath + '/' + filename + '"'
+    window['-ERROR-'].update('')
     return filepath
 
 def updateFilelist(folder):
@@ -97,7 +98,9 @@ def updateFilelist(folder):
         for f in file_list
         if os.path.isfile(os.path.join(folder, f))
         and f.lower().endswith((".mp4"))
+        
     ]
+    window['-ERROR-'].update('')
     return fnames
 
 window = sg.Window("Program do cięcia filmów", layout)
@@ -116,7 +119,6 @@ while True:
     elif event == "-FILE LIST-":  # A file was chosen from the listbox
         try:
             filepath = updateFileName()
-            window['-ERROR-'].update('')
             window["-TOUT-"].update(filepath)
         except:
             pass
@@ -132,30 +134,29 @@ while True:
         updateTime('-EMINUTE-')
     elif event == "-ESECOND-":
         updateTime('-ESECOND-')
-    elif event == "-NFNAME-":
-        try:
-            for f in fnames:
-                if f != values['-NFNAME-'] + '.mp4' or fnames == []:
-                    window['-ERROR-'].update('')
-                else:
-                    raise Exception('Nazwa pliku już istnieje')
-        except:
-            if Exception == 'Nazwa pliku już istnieje':
-                error = "Nazwa pliku już istnieje lol"
-                window['-ERROR-'].update(error)
     elif event == "-CUT-":
         try:
             filepath = updateFileName()
-            if values['-NFNAME-'] == '':
+            fileNewName = values['-NFNAME-']
+            if fileNewName == '':
                 raise Exception('Nie podano nazwy pliku')
+            for f in fnames:
+                if f == fileNewName + '.mp4':
+                    raise Exception('Nazwa pliku już istnieje')
             start = values['-SHOUR-'] + ':' + values['-SMINUTE-'] + ':' + values['-SSECOND-']
             end = values['-EHOUR-'] + ':' + values['-EMINUTE-'] + ':' + values['-ESECOND-']
-            os.system('ffmpeg -i ' + filepath + ' -ss ' + start + ' -to ' + end + ' -c copy ' + filepath[:-5] + '_cut.mp4"')
+            os.system('ffmpeg -i ' + filepath + ' -ss ' + start + ' -to ' + end + ' -c copy ' + '"' + values['-FOLDER-'] + '/' + fileNewName + '.mp4"')
             fnames = updateFilelist(values["-FOLDER-"])
             window["-FILE LIST-"].update(fnames)
-        except:
-            if Exception == 'Nie podano nazwy pliku':
+        except Exception as e:
+            if e.args[0] == 'Nie podano nazwy pliku':
                 error = "Nie podano nazwy pliku"
+                window['-ERROR-'].update(error)
+            elif e.args[0] == 'Nazwa pliku już istnieje':
+                error = "Nazwa pliku już istnieje"
+                window['-ERROR-'].update(error)
+            elif e.args[0] == 'list index out of range':
+                error = "Nie wybrano filmu"
                 window['-ERROR-'].update(error)
             
 
